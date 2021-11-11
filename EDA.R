@@ -9,7 +9,6 @@ library(lme4)
 #for population stats: https://www.kff.org/medicare/state-indicator/total-medicare-beneficiaries/?currentTimeframe=7&sortModel=%7B%22colId%22:%22Location%22,%22sort%22:%22asc%22%7D
 
 
-
 nineteen<-read.csv("2019.csv")
 eighteen<-read.csv("2018.csv")
 seventeen<-read.csv("2017.csv")
@@ -27,6 +26,8 @@ fourteen$year<-"2014"
 thirteen$year<-"2013"
 
 data<-rbind(nineteen, eighteen, seventeen, sixteen, fifteen, fourteen, thirteen)
+
+data$state<-data$Rndrng_Prvdr_State_Abrvtn
 
 #states
 
@@ -50,7 +51,11 @@ statepop<-rbind(nineteenpop, eighteenpop, seventeenpop, sixteenpop, fifteenpop, 
 
 rename(statepop$ï..Location, Location)
 
-statepop$abb<-state.abb[match(ï..Location,state.name)]
+statepop$state<-state.abb[match(statepop$ï..Location,state.name)]
+
+datamain<-left_join(data, statepop, by=c("year", "state"))
+
+#column cleanup needed but Medicare populations are here
 
 #There are some "states" that we might want to consider excluding, AA, XX, AP, MP, AE, VI, GU, PR as they rep military sites and territories
 
@@ -102,6 +107,25 @@ for (st in states) {
   plot(st)
 }
 
+
+t3<-aggregate(datamain$Tot_Benes, by=list(state=data$Rndrng_Prvdr_State_Abrvtn, year=data$year), FUN=sum)
+#figure out how to join this with state counts to turn things into a rate, since I don't need to sum I just need to refer to those values
+
+t4<-dplyr::distinct(datamain$abb, datamain$year, datamain$Original.Medicare)
+
+plot<-function(a){{
+  st<-a
+  data2<-filter(t3, state==a)
+  c<-ggplot(data2, aes(x=year, y=x, fill=year))+geom_col()+geom_text(aes(label = x), vjust = -0.5)+scale_y_continuous(labels = scales::comma) +ggtitle(st)
+  print(c)
+}
+}
+
+states<-(unique(t3$state))
+for (st in states) {
+  plot(st)
+}
+
 #WY really went up overtime, WV really went down, VA went up, UT went up, RI really shrank, OR dipped and came back, MN really went up, MI really went down, ME really went down, KY went down, IL really went down, ID substancially up, IA increased, FL went down and then came back up again, CT really went down, CO really went up, AZ has a large spike, AL really went down, AK had a huge jump
 
 #Could turn those graphs into simple linear regression plots, grab the ones that have a negative slope
@@ -135,7 +159,7 @@ plot("AZ")
 #cities
 
 
-doesthisbreak<-lmer(Tot_Benes~(1|state), data=data)
+doesthisbreak<-lmer(Tot_Benes~(1|state), data=data2)
 
 summary(doesthisbreak)
 
