@@ -2,8 +2,11 @@ library(tidyverse)
 library(openxlsx)
 library(dplyr)
 library(usmap)
+library(lme4)
 
 #data dictionary for reference: https://data.cms.gov/resources/medicare-physician-other-practitioners-by-provider-and-service-data-dictionary
+
+#for population stats: https://www.kff.org/medicare/state-indicator/total-medicare-beneficiaries/?currentTimeframe=7&sortModel=%7B%22colId%22:%22Location%22,%22sort%22:%22asc%22%7D
 
 nineteen<-read.csv("2019.csv")
 eighteen<-read.csv("2018.csv")
@@ -81,6 +84,11 @@ plot("MI")
 
 #MI, KY, IL all had increases in their populations but decreases in flu shots
 
+#Poisson to use populations as a weight for flu shot rates+offset,
+#could just focus on states
+
+#finding if doctors have records of flu shot rates to indicate if they are a good provider or not
+
 #simple linear regressions per state
 ggplot(t3, aes(x=year, y=x, color=state, group=state))+geom_smooth(se=F, method="lm", linetype=1)
 
@@ -96,4 +104,12 @@ t5<-aggregate(data$Tot_Benes, by=list(localtype=data$Rndrng_Prvdr_RUCA, year=dat
 ggplot(t5, aes(x=year, y=x, color=as.factor(localtype), group=as.factor(localtype)))+geom_smooth(se=F, method="lm", linetype=1)
 #metropolitan areas have the biggest share with increases
 
+plot("AZ")
+
+#cities
+
+
+doesthisbreak<-lmer(Tot_Benes~(1|state), data=data)
+
+summary(doesthisbreak)
 
