@@ -8,6 +8,8 @@ library(lme4)
 
 #for population stats: https://www.kff.org/medicare/state-indicator/total-medicare-beneficiaries/?currentTimeframe=7&sortModel=%7B%22colId%22:%22Location%22,%22sort%22:%22asc%22%7D
 
+
+
 nineteen<-read.csv("2019.csv")
 eighteen<-read.csv("2018.csv")
 seventeen<-read.csv("2017.csv")
@@ -25,6 +27,30 @@ fourteen$year<-"2014"
 thirteen$year<-"2013"
 
 data<-rbind(nineteen, eighteen, seventeen, sixteen, fifteen, fourteen, thirteen)
+
+#states
+
+thirteenpop<-read.csv("2013pop.csv")
+fourteenpop<-read.csv("2014pop.csv")
+fifteenpop<-read.csv("2015pop.csv")
+sixteenpop<-read.csv("2016pop.csv")
+seventeenpop<-read.csv("2017pop.csv")
+eighteenpop<-read.csv("2018pop.csv")
+nineteenpop<-read.csv("2019pop.csv")
+
+nineteenpop$year<-"2019"
+eighteenpop$year<-"2018"
+seventeenpop$year<-"2017"
+sixteenpop$year<-"2016"
+fifteenpop$year<-"2015"
+fourteenpop$year<-"2014"
+thirteenpop$year<-"2013"
+
+statepop<-rbind(nineteenpop, eighteenpop, seventeenpop, sixteenpop, fifteenpop, fourteenpop, thirteenpop)
+
+rename(statepop$ï..Location, Location)
+
+statepop$abb<-state.abb[match(ï..Location,state.name)]
 
 #There are some "states" that we might want to consider excluding, AA, XX, AP, MP, AE, VI, GU, PR as they rep military sites and territories
 
