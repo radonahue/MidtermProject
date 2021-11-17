@@ -49,9 +49,12 @@ thirteenpop$year<-"2013"
 
 statepop<-rbind(nineteenpop, eighteenpop, seventeenpop, sixteenpop, fifteenpop, fourteenpop, thirteenpop)
 
-rename(statepop$ï..Location, Location)
 
-statepop$state<-state.abb[match(statepop$ï..Location,state.name)]
+colnames(statepop)[1]<-c(substr(colnames(statepop[1]), 4, 11))
+
+
+
+statepop$state<-state.abb[match(statepop$Location,state.name)]
 
 datamain<-left_join(data, statepop, by=c("year", "state"))
 
@@ -111,20 +114,25 @@ for (st in states) {
 t3<-aggregate(datamain$Tot_Benes, by=list(state=data$Rndrng_Prvdr_State_Abrvtn, year=data$year), FUN=sum)
 #figure out how to join this with state counts to turn things into a rate, since I don't need to sum I just need to refer to those values
 
-t4<-dplyr::distinct(datamain$abb, datamain$year, datamain$Original.Medicare)
+t4<-left_join(t3, statepop, by=c("year", "state"))
+t4$percentpop<-t4$x/t4$Original.Medicare
+t4<-filter(t4, year!=2013)
+#still isn't quite right
 
-plot<-function(a){{
+plotp<-function(a){{
   st<-a
-  data2<-filter(t3, state==a)
-  c<-ggplot(data2, aes(x=year, y=x, fill=year))+geom_col()+geom_text(aes(label = x), vjust = -0.5)+scale_y_continuous(labels = scales::comma) +ggtitle(st)
+  data2<-filter(t4, state==a)
+  c<-ggplot(data2, aes(x=year, y=percentpop, fill=year))+geom_col()+geom_text(aes(label = percentpop), vjust = -0.5) +ggtitle(st)
   print(c)
 }
 }
 
-states<-(unique(t3$state))
+states<-(unique(t4$state))
 for (st in states) {
   plot(st)
 }
+
+#why is there negative numbers
 
 #WY really went up overtime, WV really went down, VA went up, UT went up, RI really shrank, OR dipped and came back, MN really went up, MI really went down, ME really went down, KY went down, IL really went down, ID substancially up, IA increased, FL went down and then came back up again, CT really went down, CO really went up, AZ has a large spike, AL really went down, AK had a huge jump
 
