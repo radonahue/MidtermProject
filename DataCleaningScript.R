@@ -1,7 +1,6 @@
 library(tidyverse)
 library(openxlsx)
 library(dplyr)
-library(lme4)
 
 unzip("2013-zip.zip")
 thirteen<-read.csv("2013.csv")

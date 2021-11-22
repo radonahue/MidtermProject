@@ -23,6 +23,8 @@ fmap
 
 #this is provider gender
 t3<-flushots%>%group_by(Gender)%>%summarise(Benes=sum(Benes))
+g3<-flushots%>%group_by(Gender)%>%summarise(n())
+
 
 providergender<-ggplot(t3, aes(x=Gender, y=Benes))+geom_col()+geom_text(aes(label = scales::comma(Benes)), vjust = -0.5)+scale_y_continuous(labels = scales::comma) +ggtitle("Providr Gender Characteristics")
 
@@ -44,5 +46,20 @@ hist(flushots$ThirdPartypaymentamount, breaks=seq(min(flushots$ThirdPartypayment
 t5<-flushots%>%group_by(PrvdrType)%>%summarise(Benes=sum(Benes))
 
 t6<-flushots%>%group_by(Name)%>%summarise(Benes=sum(Benes))
+
+t7<-flushots%>%group_by(InOfficeFlag)%>%summarise(Benes=sum(Benes))
+
+
+t8<-flushots%>%group_by(EntityFlag)%>%summarise(Benes=sum(Benes))
+
+#Not going to use this
+t9<-flushots%>%group_by(Crdntls)%>%summarise(Benes=sum(Benes))
+
+#Not going to use this
+
+
+hist(flushots$Benes)
+
+
 
 
