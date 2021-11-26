@@ -1,0 +1,92 @@
+---
+title: "The fashionability of Flu Shots"
+author: "Rachel Donahue"
+date: "12/02/2021"
+output:
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+library(tidyverse)
+library(openxlsx)
+library(dplyr)
+library(usmap)
+library(lme4)
+
+unzip("2013-zip.zip")
+thirteen<-read.csv("2013.csv")
+unzip("2014-zip.zip")
+fourteen<-read.csv("2014.csv")
+unzip("2015-zip.zip")
+fifteen<-read.csv("2015.csv")
+unzip("2016-zip.zip")
+sixteen<-read.csv("2016.csv")
+unzip("2017-zip.zip")
+seventeen<-read.csv("2017.csv")
+unzip("2018-zip.zip")
+eighteen<-read.csv("2018.csv")
+unzip("2019-zip.zip")
+nineteen<-read.csv("2019.csv")
+
+nineteen$year<-"2019"
+eighteen$year<-"2018"
+seventeen$year<-"2017"
+sixteen$year<-"2016"
+fifteen$year<-"2015"
+fourteen$year<-"2014"
+thirteen$year<-"2013"
+
+data<-rbind(nineteen, eighteen, seventeen, sixteen, fifteen, fourteen, thirteen)
+```
+
+
+
+## Abstract
+
+Medicare is one of the largest drivers of the healthcare system in the United States with over 62.6 million people enrolled in the program as of 2020 with a projected increase of 50% over the next decade. 
+
+## Introduction
+
+
+
+## Method
+
+### Data Cleaning and Processing
+The data that is being used to answer this question comes from the Medicare Physician & Other Practicioners- by Provider and Service public use files provided by (CMS) website. This is a fairly large dataset that contains all of the services that providers have submitted claims for through out the year for Original Medicare Part B beneficiaries, broken out by National Provider Identifier (NPI) number and HCPCS code. To subset down to flu shot related charges, I clicked on each of the individual years available (2013-2019), applied the filter button, selected the columns HCPCS_Desc for charges containing the words "flu" and "vaccine".I additionally applied filtering for Rndrng_Prvdr_Cntry="US".
+
+
+```{r include=FALSE}
+dataframe<-data[, c(1:2, 6, 7, 11, 17, 22:23, 26, 29:30)]
+names(dataframe)<- c("NPI", "Name", "Gender", "EntityFlag", "State", "PrvdrType", "InOfficeFlag", "Benes", "TotalCharges", "MedicarePaymentAmount", "Year")
+
+dataframe$ThirdPartypaymentamount<-dataframe$TotalCharges-dataframe$MedicarePaymentAmount
+
+flushots<-dataframe %>% filter(State!="AA"&State!="AE"&State!="XX"&State!="AP"&State!="MP"&State!="VI"&State!="GU"&State!="PR")
+
+```
+### Exploratory Data Analysis
+
+
+### Model Fitting
+
+## Result
+
+## Model Coefficients
+
+### Model Validation
+
+## Discussion
+
+## Citation
+
+A Dozen Facts About Medicare Advantage in 2020. (2021, January 13). KFF. https://www.kff.org/medicare/issue-brief/a-dozen-facts-about-medicare-advantage-in-2020/
+
+
+
+## Appendix
+### More EDA
