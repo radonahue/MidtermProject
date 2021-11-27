@@ -113,7 +113,13 @@ flushots<-dataframe %>% filter(State!="AA"&State!="AE"&State!="XX"&State!="AP"&S
 
 ACS<-ACS%>%dplyr::select(State,Year,estimate)
 
-flushots<-left_join(flushots, ACS, by=c("State", "Year"))
+flushot_s<-aggregate(Benes~State+Year+EntityFlag, data=flushots, sum)
+
+
+flushot_s<-left_join(flushot_s, ACS, by=c("State", "Year"))
+
+
+
 
 
 
