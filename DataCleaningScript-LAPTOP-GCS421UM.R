@@ -74,7 +74,22 @@ ACSdf14$state<-str_to_title(tolower(ACSdf14$state))
 ACSdf14$estimate<-as.numeric(ACSdf14$estimate)
 ACSdf14$estimate<-ACSdf14$estimate*1000
 
+#Thirteen's different
 
+# ACS13<-read.xlsx("ACS2013.xlsx")
+# ACSdf13<-ACS13[51:54,]
+# z_<-as.data.frame(t(ACSdf13[2:4, 2:206]))
+# names(z_)<-c("state", "Group","estimate")
+# z_<-subset(z_, z_$Group=="All persons")
+# z_<-z_[2:nrow(z_),c(1,3)]
+# ACSdf13<-z_
+# ACSdf13$Year<-"2013"
+# ACSdf13$state<-str_to_title(tolower(ACSdf13$state))
+# ACSdf13$estimate<-as.numeric(ACSdf13$estimate)
+# ACSdf13$estimate<-ACSdf13$estimate*1000
+
+
+#ACS<-rbind(ACSdf19, ACSdf18, ACSdf17, ACSdf16, ACSdf15, ACSdf14, ACSdf13)
 
 ACS<-rbind(ACSdf19, ACSdf18, ACSdf17, ACSdf16, ACSdf15, ACSdf14)
 
@@ -98,6 +113,9 @@ ACS<-ACS%>%filter(estimate!="NA")
 #ACS$estimate
 
 #
+
+
+#data<-rbind(nineteen, eighteen, seventeen, sixteen, fifteen, fourteen, thirteen)
 
 data<-rbind(nineteen, eighteen, seventeen, sixteen, fifteen, fourteen)
 data<-data%>%filter(HCPCS_Cd=="G0008")
