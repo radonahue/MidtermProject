@@ -347,5 +347,93 @@ fit15<-glmer(Benes~EntityFlag+(1|State)+(1|Year), offset=log(estimate), data=flu
 #different options, think about how to validate and interpret
 
 
+fit16<-glmer(Benes~EntityFlag+(EntityFlag|State)+(1|Year), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+#no errors this is cool
+summary(fit16)
+coef(fit16)
 
 
+#this does not run
+#fit17<-glmer(Benes~EntityFlag+(EntityFlag|State)+(State|Year), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+
+#summary(fit17)
+#coef(fit17)
+
+
+fit18<-glmer(Benes~EntityFlag+(Year|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+#warning
+
+fit19<-glmer(Benes~EntityFlag+Year+(Year|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+#warning
+
+fit20<-glmer(Benes~EntityFlag+Year+(EntityFlag|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+#warning
+
+fit21<-glmer(Benes~EntityFlag+Year+(EntityFlag|State)+(Year|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+#warning
+
+
+fit22<-glmer(Benes~EntityFlag+Year+State+(EntityFlag|State)+(Year|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+#warning
+#don't do this one
+
+fit23<-glmer(Benes~EntityFlag+as.numeric(Year)+(EntityFlag|State)+(as.numeric(Year)|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+#doesn't work
+
+
+#fit21 is prob best
+
+
+summary(fit21)
+plot(fit21)
+#heteroscedastic pattern
+
+
+
+
+
+#entity flag, my offset is off of state and year is that a problem?
+
+#my final data version set is 600+ rows, is that a problem? I can try to get another year but that's 700+
+
+#I think I want to treat year as continuous because it feels like there's trends?
+
+#there's a warning for fit21, is that a problem?
+
+#fit21 has heteroscedastic issues, meaning what?
+
+#is the over dispersion thing appropriate?
+
+#then interpretation? #E(to the everything)
+
+
+fit21<-glmer(Benes~EntityFlag+Year+(EntityFlag|State)+(Year|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+#warning
+
+#this is also not good
+
+ggplot(data.frame(lev=hatvalues(fit4),pearson=residuals(fit4,type="pearson")),
+       aes(x=lev,y=pearson)) +
+  geom_point() +
+  theme_bw()
+
+yhat=predict(fit21, type="response")
+
+z <- (flushot_s$Benes-yhat)/sqrt(yhat)
+n=length(flushot_s$Benes)
+k=length(flushot_s$Benes)-1
+cat ("overdispersion ratio is ", sum(z^2)/(n-k), "\n")
+
+#High overdispersion, can't fit quassipoison with the package
+
+fit22<-glmer.nb(Benes~EntityFlag+Year+(EntityFlag|State)+(Year|State), offset=log(estimate), data=flushot_s)
+#took too long to run
+
+
+fit21<-glmer(Benes~EntityFlag+Year+(EntityFlag|State)+(Year|State), offset=log(estimate), data=flushot_s, family=binomial(link="log"))
+#warning
+
+#interpretation
+summary(fit21)
+
+#E(to the everything)
