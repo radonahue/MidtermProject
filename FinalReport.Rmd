@@ -17,62 +17,54 @@ library(openxlsx)
 library(dplyr)
 library(usmap)
 library(lme4)
-
-unzip("2013-zip.zip")
-thirteen<-read.csv("2013.csv")
-unzip("2014-zip.zip")
-fourteen<-read.csv("2014.csv")
-unzip("2015-zip.zip")
-fifteen<-read.csv("2015.csv")
-unzip("2016-zip.zip")
-sixteen<-read.csv("2016.csv")
-unzip("2017-zip.zip")
-seventeen<-read.csv("2017.csv")
-unzip("2018-zip.zip")
-eighteen<-read.csv("2018.csv")
-unzip("2019-zip.zip")
-nineteen<-read.csv("2019.csv")
-
-nineteen$year<-"2019"
-eighteen$year<-"2018"
-seventeen$year<-"2017"
-sixteen$year<-"2016"
-fifteen$year<-"2015"
-fourteen$year<-"2014"
-thirteen$year<-"2013"
-
-data<-rbind(nineteen, eighteen, seventeen, sixteen, fifteen, fourteen, thirteen)
 ```
 
 
 
 ## Abstract
 
-Medicare is one of the largest drivers of the healthcare system in the United States with over 62.6 million people enrolled in the program as of 2020 with a projected increase of 50% over the next decade. 
+Medicare is one of the largest drivers of consumption and spending in the healthcare system in the United States with over 62.6 million people enrolled in the program as of 2020 with a projected increase of 50% over the next decade as all of the baby boomer generation reaches the age of 65. Understanding how this population's tendencies towards preventative healthcare measures such as seasonal flu vaccinations is crucial for projecting spending and understanding how they might function in a world with seasonal COVID-19 booster shots. In order to explore these factors, I fit a multilevel model.
 
 ## Introduction
+
+Influenza is a very serious illness and routinely hospitalizes x number of people every year. 
+
+The question I wanted to answer was how have influenza vaccination rates varied over the last several years between states?
 
 
 
 ## Method
 
 ### Data Cleaning and Processing
-The data that is being used to answer this question comes from the Medicare Physician & Other Practicioners- by Provider and Service public use files provided by (CMS) website. This is a fairly large dataset that contains all of the services that providers have submitted claims for through out the year for Original Medicare Part B beneficiaries, broken out by National Provider Identifier (NPI) number and HCPCS code. To subset down to flu shot related charges, I clicked on each of the individual years available (2013-2019), applied the filter button, selected the columns HCPCS_Desc for charges containing the words "flu" and "vaccine".I additionally applied filtering for Rndrng_Prvdr_Cntry="US".
+The data that is being used to answer this question comes two sources- one from the Medicare Physician & Other Practicioners- by Provider and Service public use files provided by (CMS) website and one from the American Community Survey provided by the US Census Bureau. The CMS dataset is a fairly large dataset that contains all of the services that providers have submitted claims for through out the year for Original Medicare Part B beneficiaries, broken out by National Provider Identifier (NPI) number and HCPCS code. To subset down to flu shot related charges, I clicked on each of the individual years available (2013-2019), applied the filter button, selected the columns HCPCS_Desc for charges containing the words "flu" and "vaccine". I additionally applied filtering for Rndrng_Prvdr_Cntry="US". The ACS dataset gives population estimates for the Medicare population in each of the following states through out the years which was estimated through the x survey for 2019-2014, the x survey for 2013.
+
+Once I combined all of the claims datasets together I then subsetted down for just HCPCS code "G0008" in order to get at appropriate counts for unique beneficiaries. This is an administrative type II HCPCS code used specifically for the Medicare population that would be used in conjuction with other types of codes for billing, as it is the code most commonly used to bill for influenza vaccines it made sense to limit the dataset to just that. Additionally I removed territories and military bases that were not a part of the traditional US.
+
+I then finally paired that with the state population estimates from the ACS survey, which would be used in the regression for the offset term.
 
 
 ```{r include=FALSE}
-dataframe<-data[, c(1:2, 6, 7, 11, 17, 22:23, 26, 29:30)]
-names(dataframe)<- c("NPI", "Name", "Gender", "EntityFlag", "State", "PrvdrType", "InOfficeFlag", "Benes", "TotalCharges", "MedicarePaymentAmount", "Year")
-
-dataframe$ThirdPartypaymentamount<-dataframe$TotalCharges-dataframe$MedicarePaymentAmount
-
-flushots<-dataframe %>% filter(State!="AA"&State!="AE"&State!="XX"&State!="AP"&State!="MP"&State!="VI"&State!="GU"&State!="PR")
 
 ```
-### Exploratory Data Analysis
 
+
+| column names      | explanation |
+| :--:              | :----- |
+| title             | The title of talk|
+| num_lang          | The number of available languages translations |
+| comments          | The number of comments |
+| duration_ted      | How long is the  video in  seconds |
+| view_ted          | The number of views |
+| categories        | The video was under which category on YouTube|
+| english           | Indicate the native language is English or not|
+
+
+### Exploratory Data Analysis
+The EDA showed that it was impossible to fit at a provider level, the data was subsetted down to x.
 
 ### Model Fitting
+
+Considering the interest is in comparing across groups, a multilevel model is appropriate.
 
 ## Result
 
@@ -82,6 +74,8 @@ flushots<-dataframe %>% filter(State!="AA"&State!="AE"&State!="XX"&State!="AP"&S
 
 ## Discussion
 
+One of the key limitations to this analysis comes from the restrictions of the data- it is really difficult to get the true numbers of the Medicare beneficiaries that received flu shots. It is possible if a Medicare beneficiary received a flu shot through a free clinic that didn't require insurance to pay for it, that scenario is unrecorded here. Additionally if a Medicare patient is co-insured and is married to a spouse that has private insurance, the scenario is also unrecorded here. Another key restriction is the population estimates- this is an estimate for Medicare Part A and B populations, although it's estimated that 93% of Medicare patients do have both insurances and it's a fair estimator, it is likely an overestimate for that population. So it's important to be cautious before extrapolating too much from this analysis.
+
 ## Citation
 
 A Dozen Facts About Medicare Advantage in 2020. (2021, January 13). KFF. https://www.kff.org/medicare/issue-brief/a-dozen-facts-about-medicare-advantage-in-2020/
@@ -90,3 +84,19 @@ A Dozen Facts About Medicare Advantage in 2020. (2021, January 13). KFF. https:/
 
 ## Appendix
 ### More EDA
+
+\newpage
+###Full Results
+
+```{r echo=FALSE}
+ranef(fit)
+```
+Fixed effects of model
+```{r echo=FALSE}
+fixef(fit)
+```
+Coefficients of model
+```{r echo=FALSE}
+coef(fit)
+```
+
