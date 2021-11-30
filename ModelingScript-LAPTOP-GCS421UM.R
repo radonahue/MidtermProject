@@ -236,28 +236,31 @@ region_lookup <- data.frame(state.abb,state.division)
 names(region_lookup)<-c("State", "Division")
 c<-left_join(c, region_lookup, by=c("State"))
 
-ggplot(data=c%>%filter(Division=="Middle Atlantic"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm")+facet_wrap(~Division)
+ggplot(data=c%>%filter(Division=="Middle Atlantic"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(~Division)
 
 
-ggplot(data=c%>%filter(Division=="East North Central"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm")+facet_wrap(~Division)
+ggplot(data=c%>%filter(Division=="East North Central"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(~Division)
 
 
-ggplot(data=c%>%filter(Division=="West North Central"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm")+facet_wrap(~Division)
+ggplot(data=c%>%filter(Division=="West North Central"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(~Division)
 
 
-ggplot(data=c%>%filter(Division=="South Atlantic"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm")+facet_wrap(~Division)
+ggplot(data=c%>%filter(Division=="South Atlantic"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(~Division)
 
 
-ggplot(data=c%>%filter(Division=="New England"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm")+facet_wrap(~Division)
+ggplot(data=c%>%filter(Division=="New England"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(~Division)
 
-ggplot(data=c%>%filter(Division=="West South Central"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm")+facet_wrap(~Division)
+ggplot(data=c%>%filter(Division=="West South Central"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(~Division)
 
-ggplot(data=c%>%filter(Division=="East South Central"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm")+facet_wrap(~Division)
+ggplot(data=c%>%filter(Division=="East South Central"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(~Division)
 
-ggplot(data=c%>%filter(Division=="Pacific"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm")+facet_wrap(~Division)
+ggplot(data=c%>%filter(Division=="Pacific"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(~Division)
 
 
 #Entity flags
+
+#include this to show justification for offset term
+ggplot(data=flushot_s, aes(x=estimate, y=Benes, color=State))+geom_point()+facet_wrap(Year)
 
 a<-aggregate(flushots$Benes, by=list(Year=flushots$Year, State=flushots$State, EntityFlag=flushots$EntityFlag), FUN=sum)
 c<-left_join(a,ACS,by=c("Year", "State"))
@@ -265,26 +268,51 @@ region_lookup <- data.frame(state.abb,state.division)
 names(region_lookup)<-c("State", "Division")
 c<-left_join(c, region_lookup, by=c("State"))
 
-ggplot(data=c%>%filter(Division=="Middle Atlantic"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm")+facet_wrap(EntityFlag~Division)
+ggplot(data=c%>%filter(Division=="Middle Atlantic"), aes(x=estimate, y=x, color=State, group=EntityFlag))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(Division~Year)
+
+ggplot(data=c%>%filter(Division=="East North Central"), aes(x=estimate, y=x, color=State, group=EntityFlag))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(Division~Year)
+
+ggplot(data=c%>%filter(Division=="West North Central"), aes(x=estimate, y=x, color=State, group=EntityFlag))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(Division~Year)
+
+ggplot(data=c%>%filter(Division=="South Atlantic"), aes(x=estimate, y=x, color=State, group=EntityFlag))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(Division~Year)
+
+ggplot(data=c%>%filter(Division=="New England"), aes(x=estimate, y=x, color=State, group=EntityFlag))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(Division~Year)
+
+ggplot(data=c%>%filter(Division=="West South Central"), aes(x=estimate, y=x, color=State, group=EntityFlag))+geom_point()+geom_line(method="lm", se=F)+facet_wrap(Division~Year)
 
 
-ggplot(data=c%>%filter(Division=="East North Central"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm")+facet_wrap(EntityFlag~Division)
+ggplot(data=c%>%filter(Division=="East South Central"), aes(x=estimate, y=x, color=State, group=EntityFlag))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(Division~Year)
+
+ggplot(data=c%>%filter(Division=="Pacific"), aes(x=estimate, y=x, color=State, group=EntityFlag))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(Division~Year)
+
+a<-aggregate(flushots$Benes, by=list(Year=flushots$Year, State=flushots$State, EntityFlag=flushots$EntityFlag), FUN=sum)
+c<-left_join(a,ACS,by=c("Year", "State"))
+region_lookup <- data.frame(state.abb,state.division)
+names(region_lookup)<-c("State", "Division")
+c<-left_join(c, region_lookup, by=c("State"))
+
+ggplot(data=c%>%filter(Division=="Middle Atlantic"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(EntityFlag~Division)
 
 
-ggplot(data=c%>%filter(Division=="West North Central"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm")+facet_wrap(EntityFlag~Division)
+ggplot(data=c%>%filter(Division=="East North Central"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(EntityFlag~Division)
 
 
-ggplot(data=c%>%filter(Division=="South Atlantic"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm")+facet_wrap(EntityFlag~Division)
+ggplot(data=c%>%filter(Division=="West North Central"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(EntityFlag~Division)
 
 
-ggplot(data=c%>%filter(Division=="New England"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm")+facet_wrap(EntityFlag~Division)
+ggplot(data=c%>%filter(Division=="South Atlantic"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(EntityFlag~Division)
 
-ggplot(data=c%>%filter(Division=="West South Central"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm")+facet_wrap(EntitiyFlag~Division)
 
-ggplot(data=c%>%filter(Division=="East South Central"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm")+facet_wrap(EntityFlag~Division)
+ggplot(data=c%>%filter(Division=="New England"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(EntityFlag~Division)
 
-ggplot(data=c%>%filter(Division=="Pacific"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm")+facet_wrap(EntityFlag~Division)
+ggplot(data=c%>%filter(Division=="West South Central"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(EntitiyFlag~Division)
 
+ggplot(data=c%>%filter(Division=="East South Central"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(EntityFlag~Division)
+
+ggplot(data=c%>%filter(Division=="Pacific"), aes(x=as.numeric(Year), y=x/estimate, group=State, color=State))+geom_point()+geom_smooth(method="lm", se=F)+facet_wrap(EntityFlag~Division)
+
+#see if larger dataset will work
+#stan_glmer
 
 
 #glmer
@@ -369,15 +397,63 @@ fit19<-glmer(Benes~EntityFlag+Year+(Year|State), offset=log(estimate), data=flus
 fit20<-glmer(Benes~EntityFlag+Year+(EntityFlag|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
 #warning
 
+
+
+#this is something to help get rid of intercepts
+fit2_1<-glmer(Benes~EntityFlag+Year+(EntityFlag-1|State)+(1+Year|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+
 fit21<-glmer(Benes~EntityFlag+Year+(EntityFlag|State)+(Year|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+
+fit21.s<-stan_glmer(Benes~EntityFlag+Year+(Year|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+
+
+fit2.1<-glmer(Benes~Year+(Year|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+#this works
+
+fit2.2<-glmer(Benes~Year+(Year|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+#no warning
+
+fit2.3<-glmer(Benes~EntityFlag+(EntityFlag|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+#no warning
+
+fit2.4<-glmer(Benes~EntityFlag+Year+(Year|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+#this breaks
+
+fit2.5<-glmer(Benes~EntityFlag+Year+(EntityFlag|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+#breaks
+
+fit2.5<-glmer(Benes~EntityFlag+Year+(EntityFlag-1|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+#breaks
+
+
+fit2.6<-glmer(Benes~EntityFlag+(Year|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+#breaks
+
+fit2.7<-glmer(Benes~1+EntityFlag+Year+(Year|State)+(EntityFlag|State), data=flushot_s, family=poisson(link="log"))
+#breaks
+
+fit2.8<-glmer(Benes~1+EntityFlag+Year+(Year|State)+(EntityFlag|State), data=flushot_s, family=poisson(link="log"))
+
+fit2.7<-stan_glmer(Benes~EntityFlag+Year+(Year|State)+(EntityFlag|State), data=flushot_s, family=poisson(link="log"))
+
+#year as.numeric 1....6
+#remove entity flag per state to see if it'll converge
+#try standardized residuals instead of pearson for plot
+#rootogram
+#give row id after vertical bar which gives an extra random term to account for over dispersion
+
+#try stan_glmer
+
+fit<-glmer(Benes~(EntityFlag+Year|State), offset=log(estimate), data=flushot_s)
 #warning
 
+fit2<-glmer(Benes~EntityFlag+Year+(EntityFlag+Year|State), offset=log(estimate), data=flushot_s)
 
-fit22<-glmer(Benes~EntityFlag+Year+State+(EntityFlag|State)+(Year|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+#fit22<-glmer(Benes~EntityFlag+Year+State+(EntityFlag|State)+(Year|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
 #warning
 #don't do this one
 
-fit23<-glmer(Benes~EntityFlag+as.numeric(Year)+(EntityFlag|State)+(as.numeric(Year)|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+#fit23<-glmer(Benes~EntityFlag+as.numeric(Year)+(EntityFlag|State)+(as.numeric(Year)|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
 #doesn't work
 
 
@@ -386,11 +462,35 @@ fit23<-glmer(Benes~EntityFlag+as.numeric(Year)+(EntityFlag|State)+(as.numeric(Ye
 
 summary(fit21)
 plot(fit21)
+coef(fit21)
+nrow(flushot_s)
 #heteroscedastic pattern
 
+#this runs without issue!!
+f<-glmer(Benes~EntityFlag+Year+(Year|State)+(EntityFlag|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+summary(f)
 
+f<-glmer(Benes~EntityFlag+Year+(Year|State)+(EntityFlag|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+summary(f)
 
+f.s<-stan_glmer(Benes~EntityFlag+Year+(Year|State)+(EntityFlag-1|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
 
+#f1<-glmer(Benes~EntityFlag+Year+(Year|State)+(EntityFlag|State)+(1|rowid), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+#summary(f1)
+
+f1<-glmer(Benes~EntityFlag+Year+(Year|State+rowid)+(EntityFlag|State+rowid), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+summary(f1)
+
+f2_<-glmer(Benes~EntityFlag+Year+(Year|rowid+State)+(EntityFlag|rowid+State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+
+f2_<-glmer(Benes~EntityFlag+Year+(Year|State)+(EntityFlag|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+
+f3_<-glmer(Benes~EntityFlag+Year+(Year|State)+(EntityFlag|State)+(1+EntityFlag|rowid), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+
+#flushot_s$rowid<-1:nrow(flushot_s)
+
+#f2<-stan_glmer(Benes~Year+(Year|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+#summary(f2)
 
 #entity flag, my offset is off of state and year is that a problem?
 
@@ -407,12 +507,14 @@ plot(fit21)
 #then interpretation? #E(to the everything)
 
 
-fit21<-glmer(Benes~EntityFlag+Year+(EntityFlag|State)+(Year|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+#fit21<-glmer(Benes~EntityFlag+Year+(EntityFlag|State)+(Year|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
 #warning
+
+
 
 #this is also not good
 
-ggplot(data.frame(lev=hatvalues(fit4),pearson=residuals(fit4,type="pearson")),
+ggplot(data.frame(lev=hatvalues(fit21),pearson=residuals(fit21,type="pearson")),
        aes(x=lev,y=pearson)) +
   geom_point() +
   theme_bw()
@@ -424,16 +526,40 @@ n=length(flushot_s$Benes)
 k=length(flushot_s$Benes)-1
 cat ("overdispersion ratio is ", sum(z^2)/(n-k), "\n")
 
+
+yhat=predict(f, type="response")
+
+z <- (flushot_s$Benes-yhat)/sqrt(yhat)
+n=length(flushot_s$Benes)
+k=length(flushot_s$Benes)-1
+cat ("overdispersion ratio is ", sum(z^2)/(n-k), "\n")
+
 #High overdispersion, can't fit quassipoison with the package
 
 fit22<-glmer.nb(Benes~EntityFlag+Year+(EntityFlag|State)+(Year|State), offset=log(estimate), data=flushot_s)
 #took too long to run
 
+yhat=predict(fit22, type="response")
 
-fit21<-glmer(Benes~EntityFlag+Year+(EntityFlag|State)+(Year|State), offset=log(estimate), data=flushot_s, family=binomial(link="log"))
+z <- (flushot_s$Benes-yhat)/sqrt(yhat)
+n=length(flushot_s$Benes)
+k=length(flushot_s$Benes)-1
+cat ("overdispersion ratio is ", sum(z^2)/(n-k), "\n")
+
+rootogram(flushot_s[,4],predict(f))
+
+#rootogram(flushot_s[,4], predict(fit22))
+
+#fit21<-glmer(Benes~EntityFlag+Year+(EntityFlag|State)+(Year|State), offset=log(estimate), data=flushot_s, family=binomial(link="log"))
 #warning
 
 #interpretation
 summary(fit21)
 
 #E(to the everything)
+
+#curious
+flu<-flushots%>%filter(EntityFlag=="I")
+fit23<-glmer(Benes~NPI+Year+(Year|NPI), data=flu)
+coef(fit23)
+
