@@ -1,5 +1,5 @@
 ---
-title: "The fashionability of Flu Shots"
+title: "The Fashionability of Flu Shots for Medicare"
 author: "Rachel Donahue"
 date: "12/02/2021"
 output:
@@ -23,27 +23,156 @@ library(lme4)
 
 ## Abstract
 
-Medicare is one of the largest drivers of consumption and spending in the healthcare system in the United States with over 62.6 million people enrolled in the program as of 2020 with a projected increase of 50% over the next decade as all of the baby boomer generation reaches the age of 65. Understanding how this population's tendencies towards preventative healthcare measures such as seasonal flu vaccinations is crucial for projecting spending and understanding how they might function in a world with seasonal COVID-19 booster shots. In order to explore these factors, I fit a multilevel model.
+Medicare is one of the largest drivers of consumption and spending in the healthcare system in the United States, and influenza causes hospitalizations of tens of thousands of people each year. In order to explore how vaccination rates have varied across states over the last several years, I fit a multilevel poisson model.
 
 ## Introduction
 
-Influenza is a very serious illness and routinely hospitalizes x number of people every year. 
+The United States Medicare program is a federal health insurance program that services people ages 65 and older and younger individuals with qualifying disabilities. As of 2020, over 62.6 million people are enrolled in Medicare with a projected increase of 50% over the next decade as all of the members of the "Baby Boomer" generation age into the program. Care for this population will put tremendous strain on the healthcare system, and it will become crucial to maximize individual participation in preventative health measures to reduce this burden. Influenza is a very serious illness and routinely hospitalizes x number of people every year, sesaonal flu vaccination typically reduces the severity of cases by x amount every year. 
 
-The question I wanted to answer was how have influenza vaccination rates varied over the last several years between states?
-
-
+I will use multilevel modeling to assess these variations in flu vaccinations.
 
 ## Method
 
 ### Data Cleaning and Processing
-The data that is being used to answer this question comes two sources- one from the Medicare Physician & Other Practicioners- by Provider and Service public use files provided by (CMS) website and one from the American Community Survey provided by the US Census Bureau. The CMS dataset is a fairly large dataset that contains all of the services that providers have submitted claims for through out the year for Original Medicare Part B beneficiaries, broken out by National Provider Identifier (NPI) number and HCPCS code. To subset down to flu shot related charges, I clicked on each of the individual years available (2013-2019), applied the filter button, selected the columns HCPCS_Desc for charges containing the words "flu" and "vaccine". I additionally applied filtering for Rndrng_Prvdr_Cntry="US". The ACS dataset gives population estimates for the Medicare population in each of the following states through out the years which was estimated through the x survey for 2019-2014, the x survey for 2013.
+The data that is being used to answer this question comes two sources- one from the Medicare Physician & Other Practicioners- by Provider and Service public use files provided by (CMS) website and one from the American Community Survey provided by the US Census Bureau. The CMS dataset is a fairly large dataset that contains all of the services that providers have submitted claims for through out the year for Original Medicare Part B beneficiaries, broken out by National Provider Identifier (NPI) number and HCPCS code. To subset down to flu shot related charges, I clicked on each of the individual years available (2013-2019), applied the filter button, selected the columns HCPCS_Desc for charges containing the words "flu" and "vaccine". I additionally applied filtering for Rndrng_Prvdr_Cntry="US". The ACS dataset gives population estimates for the Medicare Part A and B populations in each of the following states through out the years which was estimated through the x survey for 2014-2019, the x survey for 2013.
 
-Once I combined all of the claims datasets together I then subsetted down for just HCPCS code "G0008" in order to get at appropriate counts for unique beneficiaries. This is an administrative type II HCPCS code used specifically for the Medicare population that would be used in conjuction with other types of codes for billing, as it is the code most commonly used to bill for influenza vaccines it made sense to limit the dataset to just that. Additionally I removed territories and military bases that were not a part of the traditional US.
+Once I combined all of the claims datasets together I then subsetted down for just HCPCS code "G0008" in order to get at appropriate counts for unique beneficiaries. This is an administrative type II HCPCS code used specifically for the influenza vaccine that would be used in conjuction with other types of codes for billing, as it is the code most commonly used to bill for influenza vaccines it made sense to limit the dataset to just that. Additionally I removed territories and military bases to focus on the 50 states and the District of Columbia.
 
 I then finally paired that with the state population estimates from the ACS survey, which would be used in the regression for the offset term.
 
 
 ```{r include=FALSE}
+
+library(tidyverse)
+library(openxlsx)
+library(dplyr)
+library(stringr)
+
+unzip("2013-zip.zip")
+thirteen<-read.csv("2013.csv")
+unzip("2014-zip.zip")
+fourteen<-read.csv("2014.csv")
+unzip("2015-zip.zip")
+fifteen<-read.csv("2015.csv")
+unzip("2016-zip.zip")
+sixteen<-read.csv("2016.csv")
+unzip("2017-zip.zip")
+seventeen<-read.csv("2017.csv")
+unzip("2018-zip.zip")
+eighteen<-read.csv("2018.csv")
+unzip("2019-zip.zip")
+nineteen<-read.csv("2019.csv")
+
+nineteen$Year<-"2019"
+eighteen$Year<-"2018"
+seventeen$Year<-"2017"
+sixteen$Year<-"2016"
+fifteen$Year<-"2015"
+fourteen$Year<-"2014"
+thirteen$Year<-"2013"
+
+nineteen$yearnum<-7
+eighteen$yearnum<-6
+seventeen$yearnum<-5
+sixteen$yearnum<-4
+fifteen$yearnum<-3
+fourteen$yearnum<-2
+thirteen$yearnum<-1
+
+data<-rbind(nineteen, eighteen, seventeen, sixteen, fifteen, fourteen, thirteen)
+
+data<-data%>%filter(HCPCS_Cd=="G0008")
+
+dataframe<-data[, c(1:2, 7, 11, 17, 23,26, 29:31)]
+names(dataframe)<- c("NPI", "Name",  "EntityFlag", "State", "PrcType", "Benes", "TotalCharges", "MedicarePaymentAmount", "Year", "yearnum")
+
+flushots<-dataframe %>% filter(State!="AA"&State!="AE"&State!="XX"&State!="AP"&State!="MP"&State!="VI"&State!="GU"&State!="PR")
+
+
+ACS19<-read.xlsx("ACS2019.xlsx")
+ACSdf19<-ACS19[9:59, 1:2]
+names(ACSdf19)<-c("state", "estimate")
+ACSdf19$Year<-"2019"
+ACSdf19$yearnum<-7
+ACSdf19$estimate<-as.numeric(ACSdf19$estimate)
+ACSdf19$estimate<-ACSdf19$estimate*1000
+
+ACS18<-read.xlsx("ACS2018.xlsx")
+ACSdf18<-ACS18[7:59, 1:2]
+names(ACSdf18)<-c("state", "estimate")
+ACSdf18$Year<-"2018"
+ACSdf18$yearnum<-6
+ACSdf18$state<-str_to_title(tolower(ACSdf18$state))
+ACSdf18$estimate<-as.numeric(ACSdf18$estimate)
+ACSdf18$estimate<-ACSdf18$estimate*1000
+
+ACS17<-read.xlsx("ACS2017.xlsx")
+ACSdf17<-ACS17[7:59, 1:2]
+names(ACSdf17)<-c("state", "estimate")
+ACSdf17$Year<-"2017"
+ACSdf17$yearnum<-5
+ACSdf17$state<-str_to_title(tolower(ACSdf17$state))
+ACSdf17$estimate<-as.numeric(ACSdf17$estimate)
+ACSdf17$estimate<-ACSdf17$estimate*1000
+
+ACS16<-read.xlsx("ACS2016.xlsx")
+ACSdf16<-ACS16[8:59, 1:2]
+names(ACSdf16)<-c("state", "estimate")
+ACSdf16$Year<-"2016"
+ACSdf16$yearnum<-4
+ACSdf16$state<-str_to_title(tolower(ACSdf16$state))
+ACSdf16$estimate<-as.numeric(ACSdf16$estimate)
+ACSdf16$estimate<-ACSdf16$estimate*1000
+
+ACS15<-read.xlsx("ACS2015.xlsx")
+ACSdf15<-ACS15[8:59, 1:2]
+names(ACSdf15)<-c("state", "estimate")
+ACSdf15$Year<-"2015"
+ACSdf15$yearnum<-3
+ACSdf15$state<-str_to_title(tolower(ACSdf15$state))
+ACSdf15$estimate<-as.numeric(ACSdf15$estimate)
+ACSdf15$estimate<-ACSdf15$estimate*1000
+
+ACS14<-read.xlsx("ACS2014.xlsx")
+ACSdf14<-ACS14[8:59, 1:2]
+names(ACSdf14)<-c("state", "estimate")
+ACSdf14$Year<-"2014"
+ACSdf14$yearnum<-2
+ACSdf14$state<-str_to_title(tolower(ACSdf14$state))
+ACSdf14$estimate<-as.numeric(ACSdf14$estimate)
+ACSdf14$estimate<-ACSdf14$estimate*1000
+
+#Thirteen's different
+
+ACS13<-read.xlsx("ACS2013.xlsx")
+ACSdf13<-ACS13[51:54,]
+z_<-as.data.frame(t(ACSdf13[2:4, 2:206]))
+names(z_)<-c("state", "Group","estimate")
+z_<-subset(z_, z_$Group=="All persons")
+z_<-z_[2:nrow(z_),c(1,3)]
+ACSdf13<-z_
+ACSdf13$Year<-"2013"
+ACSdf13$yearnum<-1
+ACSdf13$state<-str_to_title(tolower(ACSdf13$state))
+ACSdf13$estimate<-as.numeric(ACSdf13$estimate)
+ACSdf13$estimate<-ACSdf13$estimate*1000
+
+
+ACS<-rbind(ACSdf19, ACSdf18, ACSdf17, ACSdf16, ACSdf15, ACSdf14, ACSdf13)
+
+ACS$State<-state.abb[match(ACS$state,state.name)]
+
+ACS$State<-ifelse(ACS$state=="District Of Columbia"|ACS$state=="District of Columbia", "DC", ACS$State)
+
+ACS<-ACS%>%filter(estimate!="NA")
+
+ACS<-ACS%>%dplyr::select(State,Year,estimate)
+
+flushot_s<-aggregate(Benes~State+Year+EntityFlag+yearnum, data=flushots, sum)
+
+flushot_s<-left_join(flushot_s, ACS, by=c("State", "Year", "yearnum"))
+
+
 
 ```
 
@@ -62,6 +191,9 @@ I then finally paired that with the state population estimates from the ACS surv
 ### Exploratory Data Analysis
 The EDA showed that it was impossible to fit at a provider level, the data was subsetted down to x.
 
+
+
+
 ### Model Fitting
 
 Considering the interest is in comparing across groups, a multilevel model is appropriate.
@@ -76,9 +208,12 @@ Considering the interest is in comparing across groups, a multilevel model is ap
 
 One of the key limitations to this analysis comes from the restrictions of the data- it is really difficult to get the true numbers of the Medicare beneficiaries that received flu shots. It is possible if a Medicare beneficiary received a flu shot through a free clinic that didn't require insurance to pay for it, that scenario is unrecorded here. Additionally if a Medicare patient is co-insured and is married to a spouse that has private insurance, the scenario is also unrecorded here. Another key restriction is the population estimates- this is an estimate for Medicare Part A and B populations, although it's estimated that 93% of Medicare patients do have both insurances and it's a fair estimator, it is likely an overestimate for that population. So it's important to be cautious before extrapolating too much from this analysis.
 
-## Citation
+## Citations
 
 A Dozen Facts About Medicare Advantage in 2020. (2021, January 13). KFF. https://www.kff.org/medicare/issue-brief/a-dozen-facts-about-medicare-advantage-in-2020/
+
+#you need a flu stat section.
+
 
 
 

@@ -18,40 +18,46 @@ eighteen<-read.csv("2018.csv")
 unzip("2019-zip.zip")
 nineteen<-read.csv("2019.csv")
 
-# nineteen$year<-"2019"
-# eighteen$year<-"2018"
-# seventeen$year<-"2017"
-# sixteen$year<-"2016"
-# fifteen$year<-"2015"
-# fourteen$year<-"2014"
-# thirteen$year<-"2013"
+nineteen$Year<-"2019"
+eighteen$Year<-"2018"
+seventeen$Year<-"2017"
+sixteen$Year<-"2016"
+fifteen$Year<-"2015"
+fourteen$Year<-"2014"
+thirteen$Year<-"2013"
 
 
-nineteen$year<-7
-eighteen$year<-6
-seventeen$year<-5
-sixteen$year<-4
-fifteen$year<-3
-fourteen$year<-2
-thirteen$year<-1
+nineteen$yearnum<-7
+eighteen$yearnum<-6
+seventeen$yearnum<-5
+sixteen$yearnum<-4
+fifteen$yearnum<-3
+fourteen$yearnum<-2
+thirteen$yearnum<-1
 
+data<-rbind(nineteen, eighteen, seventeen, sixteen, fifteen, fourteen, thirteen)
 
-#years<-c(2014:2019)
+data<-data%>%filter(HCPCS_Cd=="G0008")
+
+dataframe<-data[, c(1:2, 7, 11, 17, 23,26, 29:30)]
+names(dataframe)<- c("NPI", "Name",  "EntityFlag", "State", "PrcType", "Benes", "TotalCharges", "MedicarePaymentAmount", "Year")
+
+flushots<-dataframe %>% filter(State!="AA"&State!="AE"&State!="XX"&State!="AP"&State!="MP"&State!="VI"&State!="GU"&State!="PR")
 
 
 ACS19<-read.xlsx("ACS2019.xlsx")
 ACSdf19<-ACS19[9:59, 1:2]
 names(ACSdf19)<-c("state", "estimate")
-#ACSdf19$Year<-"2019"
-ACSdf19$Year<-7
+ACSdf19$Year<-"2019"
+ACSdf19$yearnum<-7
 ACSdf19$estimate<-as.numeric(ACSdf19$estimate)
 ACSdf19$estimate<-ACSdf19$estimate*1000
 
 ACS18<-read.xlsx("ACS2018.xlsx")
 ACSdf18<-ACS18[7:59, 1:2]
 names(ACSdf18)<-c("state", "estimate")
-#ACSdf18$Year<-"2018"
-ACSdf18$Year<-6
+ACSdf18$Year<-"2018"
+ACSdf18$yearnum<-6
 ACSdf18$state<-str_to_title(tolower(ACSdf18$state))
 ACSdf18$estimate<-as.numeric(ACSdf18$estimate)
 ACSdf18$estimate<-ACSdf18$estimate*1000
@@ -59,8 +65,8 @@ ACSdf18$estimate<-ACSdf18$estimate*1000
 ACS17<-read.xlsx("ACS2017.xlsx")
 ACSdf17<-ACS17[7:59, 1:2]
 names(ACSdf17)<-c("state", "estimate")
-#ACSdf17$Year<-"2017"
-ACSdf17$Year<-5
+ACSdf17$Year<-"2017"
+ACSdf17$yearnum<-5
 ACSdf17$state<-str_to_title(tolower(ACSdf17$state))
 ACSdf17$estimate<-as.numeric(ACSdf17$estimate)
 ACSdf17$estimate<-ACSdf17$estimate*1000
@@ -68,8 +74,8 @@ ACSdf17$estimate<-ACSdf17$estimate*1000
 ACS16<-read.xlsx("ACS2016.xlsx")
 ACSdf16<-ACS16[8:59, 1:2]
 names(ACSdf16)<-c("state", "estimate")
-#ACSdf16$Year<-"2016"
-ACSdf16$Year<-4
+ACSdf16$Year<-"2016"
+ACSdf16$yearnum<-4
 ACSdf16$state<-str_to_title(tolower(ACSdf16$state))
 ACSdf16$estimate<-as.numeric(ACSdf16$estimate)
 ACSdf16$estimate<-ACSdf16$estimate*1000
@@ -77,8 +83,8 @@ ACSdf16$estimate<-ACSdf16$estimate*1000
 ACS15<-read.xlsx("ACS2015.xlsx")
 ACSdf15<-ACS15[8:59, 1:2]
 names(ACSdf15)<-c("state", "estimate")
-#ACSdf15$Year<-"2015"
-ACSdf15$Year<-3
+ACSdf15$Year<-"2015"
+ACSdf15$yearnum<-3
 ACSdf15$state<-str_to_title(tolower(ACSdf15$state))
 ACSdf15$estimate<-as.numeric(ACSdf15$estimate)
 ACSdf15$estimate<-ACSdf15$estimate*1000
@@ -86,8 +92,8 @@ ACSdf15$estimate<-ACSdf15$estimate*1000
 ACS14<-read.xlsx("ACS2014.xlsx")
 ACSdf14<-ACS14[8:59, 1:2]
 names(ACSdf14)<-c("state", "estimate")
-#ACSdf14$Year<-"2014"
-ACSdf14$Year<-2
+ACSdf14$Year<-"2014"
+ACSdf14$yearnum<-2
 ACSdf14$state<-str_to_title(tolower(ACSdf14$state))
 ACSdf14$estimate<-as.numeric(ACSdf14$estimate)
 ACSdf14$estimate<-ACSdf14$estimate*1000
@@ -101,8 +107,8 @@ names(z_)<-c("state", "Group","estimate")
 z_<-subset(z_, z_$Group=="All persons")
 z_<-z_[2:nrow(z_),c(1,3)]
 ACSdf13<-z_
-#ACSdf13$Year<-"2013"
-ACSdf13$Year<-1
+ACSdf13$Year<-"2013"
+ACSdf13$yearnum<-1
 ACSdf13$state<-str_to_title(tolower(ACSdf13$state))
 ACSdf13$estimate<-as.numeric(ACSdf13$estimate)
 ACSdf13$estimate<-ACSdf13$estimate*1000
@@ -110,38 +116,18 @@ ACSdf13$estimate<-ACSdf13$estimate*1000
 
 ACS<-rbind(ACSdf19, ACSdf18, ACSdf17, ACSdf16, ACSdf15, ACSdf14, ACSdf13)
 
-#ACS<-rbind(ACSdf19, ACSdf18, ACSdf17, ACSdf16, ACSdf15, ACSdf14)
-
 ACS$State<-state.abb[match(ACS$state,state.name)]
 
 ACS$State<-ifelse(ACS$state=="District Of Columbia"|ACS$state=="District of Columbia", "DC", ACS$State)
 
 ACS<-ACS%>%filter(estimate!="NA")
 
-
-
-
-data<-rbind(nineteen, eighteen, seventeen, sixteen, fifteen, fourteen, thirteen)
-
-#data<-rbind(nineteen, eighteen, seventeen, sixteen, fifteen, fourteen)
-data<-data%>%filter(HCPCS_Cd=="G0008")
-
-dataframe<-data[, c(1:2, 7, 11, 17, 23,26, 29:30)]
-names(dataframe)<- c("NPI", "Name",  "EntityFlag", "State", "PrcType", "Benes", "TotalCharges", "MedicarePaymentAmount", "Year")
-
-#dataframe$ThirdPartypaymentamount<-dataframe$TotalCharges-dataframe$MedicarePaymentAmount
-
-
-
-flushots<-dataframe %>% filter(State!="AA"&State!="AE"&State!="XX"&State!="AP"&State!="MP"&State!="VI"&State!="GU"&State!="PR")
-
 ACS<-ACS%>%dplyr::select(State,Year,estimate)
 
 flushot_s<-aggregate(Benes~State+Year+EntityFlag, data=flushots, sum)
 
 
-flushot_s<-left_join(flushot_s, ACS, by=c("State", "Year"))
-
+flushot_s<-left_join(flushot_s, ACS, by=c("State", "Year", "yearnum"))
 
 
 

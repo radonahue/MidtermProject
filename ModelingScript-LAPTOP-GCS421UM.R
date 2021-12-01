@@ -467,13 +467,62 @@ nrow(flushot_s)
 #heteroscedastic pattern
 
 #this runs without issue!!
-f<-glmer(Benes~EntityFlag+Year+(Year|State)+(EntityFlag|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
-summary(f)
+f_real<-glmer(Benes~EntityFlag+yearnum+(yearnum|State)+(EntityFlag|State), offset=log(estimate), data=flushot_s, family=poisson(link=log))
+summary(f_real)
+display(f_real)
 
-f<-glmer(Benes~EntityFlag+Year+(Year|State)+(EntityFlag|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
-summary(f)
+f<-stan_glmer(Benes~EntityFlag+Year+(Year+EntityFlag|State), offset=log(estimate), data=flushot_s, family=poisson(link=log))
 
-f.s<-stan_glmer(Benes~EntityFlag+Year+(Year|State)+(EntityFlag-1|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+saveRDS(f,"stanmodel.rds")
+
+#the assumption is that these 2 things are correlated
+
+yhat=predict(f, type="response")
+
+z <- (flushot_s$Benes-yhat)/sqrt(yhat)
+n=length(flushot_s$Benes)
+k=length(flushot_s$Benes)-1
+cat ("overdispersion ratio is ", sum(z^2)/(n-k), "\n")
+
+F_<-glmer(Benes~EntityFlag+Year+(Year|State)+(EntityFlag|State)+(1|rowid), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+#singular fit warning
+
+yhat=predict(F_, type="response")
+
+z <- (flushot_s$Benes-yhat)/sqrt(yhat)
+n=length(flushot_s$Benes)
+k=length(flushot_s$Benes)-1
+cat ("overdispersion ratio is ", sum(z^2)/(n-k), "\n")
+
+AIC(f)
+AIC(F_)
+
+z<-as.data.frame(cbind(fitted(F_), resid(F_)))
+ggplot(data=z, aes(x=V1, y=V2))+geom_point()
+
+z2<-as.data.frame(cbind(fitted(f), resid(f)))
+ggplot(data=z2, aes(x=V1, y=V2))+geom_point(color="red")
+
+rootogram(flushot_s[,4],predict(F_))
+rootogram(flushot_s[,4]/flushot_s[,5],predict(f))
+
+
+fitted(F_)
+
+resid(F_)
+
+plot(fitted(F_), resid(F_))
+
+plot(F_)
+
+resid(F_)
+fitted(F_)
+
+
+#f.s<-stan_glmer(Benes~EntityFlag+Year+(Year|State)+(EntityFlag-1|State), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
+
+#saveRDS(f.s,"stanmodel.rds")
+
 
 #f1<-glmer(Benes~EntityFlag+Year+(Year|State)+(EntityFlag|State)+(1|rowid), offset=log(estimate), data=flushot_s, family=poisson(link="log"))
 #summary(f1)
