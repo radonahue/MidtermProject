@@ -1,11 +1,10 @@
 ---
-title: "The Fashionability of Flu Shots for Medicare"
+title: "The Fashionability of Flu Shots for the Medicare Population"
 author: "Rachel Donahue"
 date: "12/02/2021"
 output:
   pdf_document: default
 ---
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
 	echo = TRUE,
@@ -17,30 +16,30 @@ library(openxlsx)
 library(dplyr)
 library(usmap)
 library(lme4)
+library(vcd)
+library(rstanarm)
+library(gridExtra)
 ```
-
-
-
 ## Abstract
 
-Medicare is one of the largest drivers of consumption and spending in the healthcare system in the United States, and influenza causes hospitalizations of tens of thousands of people each year. In order to explore how vaccination rates have varied across states over the last several years, I fit a multilevel poisson model.
+Medicare is one of the largest drivers of consumption and spending in the United States healthcare system, and Influenza (flu) causes hospitalizations and deaths of thousands of people annually. As vaccine hesitancy has become a pressing issue in efforts to combat the Covid-19 pandemic, it seems worth exploring how this sizable and vulnerable population was already utilizing vaccinations for an extant dangerous illness. This leads to questions of "How has Medicare flu vaccination rates been changing over the last several years?" and "How does that rate vary across states?". To make these comparisons, a multilevel poisson model was fitted on Medicare claims data from 2013-2019 and its limitations are discussed.
 
 ## Introduction
 
-The United States Medicare program is a federal health insurance program that services people ages 65 and older and younger individuals with qualifying disabilities. As of 2020, over 62.6 million people are enrolled in Medicare with a projected increase of 50% over the next decade as all of the members of the "Baby Boomer" generation age into the program. Care for this population will put tremendous strain on the healthcare system, and it will become crucial to maximize individual participation in preventative health measures to reduce this burden. Influenza is a very serious illness and routinely hospitalizes x number of people every year, sesaonal flu vaccination typically reduces the severity of cases by x amount every year. 
+The United States Medicare program is a federal health insurance program that services predominately people ages 65 years and older. As of 2020, over 62.6 million people are enrolled with a projected increase of 50% over the next decade as all of the members of the "Baby Boomer" generation reach the qualifying age. Care for this population will put tremendous strain on the healthcare system, and it will become crucial to maximize individual participation in preventative health measures to reduce this burden. 
 
-I will use multilevel modeling to assess these variations in flu vaccinations.
+Caring for flu patients is one of those strenuous healthcare activities that can be reduced by vaccinations. Flu illness routinely hospitalizes hundreds of thousands of people every year, seasonal flu vaccination is estimated to reduce the risk of having to seek medical treatment by 40-60%. The Medicare population is a high proportion of these cases as they are a large proportion of the broader US population. However there are differences in the enrollment rates per state, which is important to take into consideration.
+
+Multilevel poisson modeling is used to assess these comparisons in flu vaccinations rates among this population.
 
 ## Method
 
 ### Data Cleaning and Processing
-The data that is being used to answer this question comes two sources- one from the Medicare Physician & Other Practicioners- by Provider and Service public use files provided by (CMS) website and one from the American Community Survey provided by the US Census Bureau. The CMS dataset is a fairly large dataset that contains all of the services that providers have submitted claims for through out the year for Original Medicare Part B beneficiaries, broken out by National Provider Identifier (NPI) number and HCPCS code. To subset down to flu shot related charges, I clicked on each of the individual years available (2013-2019), applied the filter button, selected the columns HCPCS_Desc for charges containing the words "flu" and "vaccine". I additionally applied filtering for Rndrng_Prvdr_Cntry="US". The ACS dataset gives population estimates for the Medicare Part A and B populations in each of the following states through out the years which was estimated through the x survey for 2014-2019, the x survey for 2013.
+The data that is being used to answer these questions come from two sources- one from the Medicare Physician & Other Practitioners- by Provider and Service public use files provided by (CMS) website and one from the American Community Survey provided by the US Census Bureau. The CMS data set is a fairly large data set that contains all of the services that providers have submitted claims through out the year for Original Medicare Part B beneficiaries, broken out by National Provider Identifier (NPI) number and HCPCS code. To subset down to flu shot related charges for each available year, filtering was applied for selected the columns HCPCS_Desc for charges containing the words "flu" and "vaccine". Additional filtering was applied for Rndrng_Prvdr_Cntry="US". The ACS data set gives population estimates for the Medicare Part A and B populations in each of the following states through out the years which was estimated through the American Community survey for 2014-2019, the Current Population survey for 2013.
 
-Once I combined all of the claims datasets together I then subsetted down for just HCPCS code "G0008" in order to get at appropriate counts for unique beneficiaries. This is an administrative type II HCPCS code used specifically for the influenza vaccine that would be used in conjuction with other types of codes for billing, as it is the code most commonly used to bill for influenza vaccines it made sense to limit the dataset to just that. Additionally I removed territories and military bases to focus on the 50 states and the District of Columbia.
+Once all the claims data sets were combined together they were then additionally subsetted down for just HCPCS code "G0008" in order to get at appropriate counts for unique beneficiaries. This is an administrative type II HCPCS code used specifically for the influenza vaccine that would be used in conjunction with other types of codes for billing, as it is the code most commonly used to bill for influenza vaccines it made sense to limit the data set to just that. Additionally territories and military bases to focus on the 50 states and the District of Columbia. Once that was complete there were I 1,008,254 rows in the data set.
 
-I then finally paired that with the state population estimates from the ACS survey, which would be used in the regression for the offset term.
-
-
+To allow for population proportion comparisons, I aggregated these rows by state, year, and entity status. I then finally paired that with the state population estimates from the ACS survey, which would be used in the regression for the offset term.
 ```{r include=FALSE}
 
 library(tidyverse)
@@ -166,72 +165,230 @@ ACS$State<-ifelse(ACS$state=="District Of Columbia"|ACS$state=="District of Colu
 
 ACS<-ACS%>%filter(estimate!="NA")
 
-ACS<-ACS%>%dplyr::select(State,Year,estimate)
+ACS<-ACS%>%dplyr::select(State,Year,estimate,yearnum)
 
 flushot_s<-aggregate(Benes~State+Year+EntityFlag+yearnum, data=flushots, sum)
 
 flushot_s<-left_join(flushot_s, ACS, by=c("State", "Year", "yearnum"))
 
-
-
 ```
-
-
 | column names      | explanation |
 | :--:              | :----- |
-| title             | The title of talk|
-| num_lang          | The number of available languages translations |
-| comments          | The number of comments |
-| duration_ted      | How long is the  video in  seconds |
-| view_ted          | The number of views |
-| categories        | The video was under which category on YouTube|
-| english           | Indicate the native language is English or not|
+| State             | The registration state of the provider|
+| Year              | The year of the claims submitted |
+| EntityFlag        | If the provider was an Individual=I or and Organization=O|
+| Benes             | The number of unique Medicare Beneficiaries serviced|
+| estimate          | Medicare population estimates for that state and year |
+| yearnum           | The indexing number for the year, 2013=1...2019=7|
 
 
 ### Exploratory Data Analysis
-The EDA showed that it was impossible to fit at a provider level, the data was subsetted down to x.
+```{r include=FALSE}
+
+region_lookup <- data.frame(state.abb,state.division)
+names(region_lookup)<-c("State", "Division")
+f<-left_join(flushot_s, region_lookup, by=c("State"))
 
 
+a<-aggregate(Benes~State+Year, data=flushots, sum) 
+a2<-left_join(a, ACS, by=c("State", "Year"))
+names(region_lookup)<-c("State", "Division")
+a2<-left_join(a2, region_lookup, by=c("State"))
+```
+```{r include=FALSE}
+p<-ggplot(a2, aes(x=Benes, y=estimate, color=State))+geom_point()+labs(x="Number of Beneficiaries Receiving Flu Shots", y="Beneficiaries Per State")+ ggtitle("Beneficiaries receiving Flu Shots versus Population Estimates")+facet_wrap(~Year)+theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+panel.grid.minor = element_blank(), axis.text = element_text(size = 6), axis.title = element_text(size = 8), title = element_text(size = 8), legend.title=element_text(size=8), legend.key.size = unit(0.2, "cm"))
 
+p1<-ggplot(a2%>%filter(Division=="New England"), aes(x=Year, y=Benes/estimate, color=State, group=State))+geom_point()+geom_smooth(method="lm",se=F)+ggtitle("Flu Shot rates per State in New England")+labs(y="Proportion of Beneficiaries receiving Flu Shots")+ theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+panel.grid.minor = element_blank(), axis.text = element_text(size = 5), axis.title = element_text(size = 7), title = element_text(size = 7))
+
+p2<-ggplot(f%>%filter(Division=="New England"), aes(x=Year, y=Benes/estimate, color=State, group=State))+geom_point()+geom_smooth(method="lm",se=F)+facet_wrap(~EntityFlag)+ggtitle("Flu Shot rates per State in New England by Provider Type")+labs(y="Proportion of Beneficiaries receiving Flu Shots")+ theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+panel.grid.minor = element_blank(), axis.text = element_text(size = 5), axis.title = element_text(size = 7), title = element_text(size = 7))
+
+```
+
+``` {r echo=FALSE, fig.height=3.5, fig.width=6}
+p
+```
+
+This plot justifies the requirements for a Medicare population offset term, as the number of Medicare beneficiaries receiving flu shots increases as the population with in each state increases.
+
+``` {r echo=FALSE, fig.height=3.5, fig.width=6}
+p1
+```
+
+To make it easier to see patterns in each of the 50 states, line graphs were restricted to different regions in the US. New England with each of the states are included here, the full state results are included in the appendix. There seems to be a declining trend in flu vaccination rates among most of these states.
+
+
+``` {r echo=FALSE, fig.height=3.5, fig.width=6}
+p2
+```
+
+This plot shows that there are differences in how rates have changed over time when broken out by provider type. Although there is a general downward trend in vaccination rates, for some states those vaccinations are increasingly taking place at organizations instead of individual providers.
 
 ### Model Fitting
 
-Considering the interest is in comparing across groups, a multilevel model is appropriate.
+Considering the interest is in comparing counts across groups, a multilevel poisson model is appropriate with population estimates used for offset terms. 
+
+```{r eval=FALSE}
+model<-glmer(Benes~EntityFlag+yearnum+(yearnum|State) +(EntityFlag|State), 
+offset=log(estimate),      
+data=flushot_s, 
+family=poisson(link=log))
+
+```
+
+The summary of the fixed effects are in the table below, year is significant at a .1 significance level:
+
+|                |Estimate   |Std. Error    |z value |Pr(>&#124;t&#124;) |
+|:---:           |:---:      |:---:         |:---:       |:---:              |
+|(Intercept)     |-2.086     |0.066         |-31.370    |<2e-16 ***         |
+|EntityFlag(O)   |0.126      |0.08          |1.583      |0.1135             |
+|yearnum         |-0.017     |0.009         |-1.755     |0.0792 .           |
 
 ## Result
 
 ## Model Coefficients
 
+To use the state of Maine as an example, the model coefficients are as follows:
+
+$$log(Benes/estimate)= -1.74 + 0.76\cdot EntityFlag(O)  - 0.08\cdot yearnum$$
+
+Exponentiating both sides allows the equation be interpreted as (where e=EntityFlag(O) and y=yearnum):
+$$Benes/estimate=(0.175)*(1.079)^e * (0.923)^y$$
+
+Since the outcome variable is a proportion of individuals, it makes sense for the intercept to be 0.175. While it is not possible to have a year 0 in this context, the year coefficient shows that for every year increase, the proportion of Medicare beneficiaries receiving flushots decreases by about 7%. The Entity Flag coefficient compares the proportion of Medicare beneficiaries that receive flushots from organizations to individuals, there is a 7% increase in the proportion of beneficiaries receiving flu shots from organizations than individual providers in the state of Maine.
+
+For each state, the effects of each coefficient are different. For example in California, which has the largest state Medicare population, the baseline intercept is a little bit larger, and the entity comparison is in the opposite direction of more beneficiaries receiving flushots from individuals rather than organizations.
+
 ### Model Validation
+
+```{r include=FALSE}
+model<-glmer(Benes~EntityFlag+yearnum+(yearnum|State) +(EntityFlag|State), 
+offset=log(estimate),      
+data=flushot_s, 
+family=poisson(link=log))
+
+```
+
+```{r echo=FALSE, fig.height=2, fig.width=3}
+
+z<-as.data.frame(cbind(fitted(model), resid(model)))
+names(z)<-c("Fitted", "Residuals")
+
+g<-ggplot(data=z, aes(x=Fitted, y=Residuals))+geom_point(color="light blue")+theme_bw()+ggtitle("Residual Plot")
+
+g
+
+```
+
+The mean of the residual plot is almost 0, however there does seem to be a heteroscedastic pattern with most of the residuals clustering towards the left hand side of the graph.
+```{r include=FALSE}
+
+yhat=predict(model, type="response")/flushot_s$estimate
+z <- (flushot_s$Benes/flushot_s$estimate-yhat)/sqrt(yhat)
+n=length(flushot_s$Benes)
+k=length(flushot_s$Benes)-1
+sum(z^2)/(n-k)
+
+```
+The overdispersion ratio is 2.3 which is greater than 1, which does indicate that the mean exceeds the variance which is a violation of the equal mean and equal variance assumption required for Poisson.
 
 ## Discussion
 
-One of the key limitations to this analysis comes from the restrictions of the data- it is really difficult to get the true numbers of the Medicare beneficiaries that received flu shots. It is possible if a Medicare beneficiary received a flu shot through a free clinic that didn't require insurance to pay for it, that scenario is unrecorded here. Additionally if a Medicare patient is co-insured and is married to a spouse that has private insurance, the scenario is also unrecorded here. Another key restriction is the population estimates- this is an estimate for Medicare Part A and B populations, although it's estimated that 93% of Medicare patients do have both insurances and it's a fair estimator, it is likely an overestimate for that population. So it's important to be cautious before extrapolating too much from this analysis.
+This analysis has some restrictions in that there are some problems with the model- with the clustering of the residuals and the overdispersion factors. Quasipoisson and negative binomial models were also considered, however errors resulted that were not fixable. Other R formulas for running the model were also considered such as stan_glmer, but the model did not converge. Based on these challenges this was the best model that could be composed.
+
+Another key limitation to this analysis comes from the data- it is impossible to get the true numbers of the Medicare beneficiaries that received flu shots from 2013-2019. If beneficiaries are able to obtain shots through a free clinic that didn't require insurance to pay for it, then that scenario is unrecorded here. And as it is the case that in certain states, an increasing number of patients are receiving their vaccinations from entity settings as opposed to individual providers; free clinic settings are likely getting larger shares of these patients. Another key restriction is the population estimates- the ACS survey is an estimate for patients that have both Medicare Part A and B, although it's estimated that 93% of Medicare patients do have both insurances and that an estimate for both can be a sufficient estimate for one, it is likely an overestimate for that Part B population and observed flu vaccination rates are likely higher. 
+
+Despite limitations, this analysis still produces some interesting considerations. If broader flu shot rates for this population were truly declining during this period of time, it lays somewhat of a foundation for some of the difficulties getting the broader US population vaccinated for the Covid-19 pandemic. Additionally if frequent booster shots become required to effectively control the spread of Covid-19 and its variants, understanding how this population was managing an already existing seasonal vaccination becomes relevant. Also seeing where there are states servicing beneficiaries more through organizations instead of individual providers gives an opportunity for public health messaging x!
 
 ## Citations
 
 A Dozen Facts About Medicare Advantage in 2020. (2021, January 13). KFF. https://www.kff.org/medicare/issue-brief/a-dozen-facts-about-medicare-advantage-in-2020/
 
-#you need a flu stat section.
+Burden of Influenza. (2021, October 4). Centers for Disease Control and Prevention. https://www.cdc.gov/flu/about/burden/index.html
+
+Centers for Medicare & Medicaid Services Data. (2021). Center for Medicare & Medicaid Services. https://data.cms.gov/provider-summary-by-type-of-service/medicare-physician-other-practitioners/medicare-physician-other-practitioners-by-provider-and-service
+
+US Census Bureau. (2021, October 8). American Community Survey Tables for Health Insurance Coverage. Census.Gov. https://www.census.gov/data/tables/time-series/demo/health-insurance/acs-hi.2013.html
 
 
-
-
+\newpage
 ## Appendix
 ### More EDA
+
+```{r echo=FALSE , fig.height=3, fig.width=6}
+flushot_s$state<-flushot_s$State
+
+plot_usmap(regions="states", data = flushot_s%>%filter(Year=="2019"), values = "estimate", color = "black") + scale_fill_continuous(low="white", high="blue", name="Beneficiaries", label = scales::comma)+labs(title = "Estimates of Medicare Beneficiaries Per State 2019")
+
+#DC needs special treatment to get a region
+region_lookup <- data.frame(state.abb,state.division)
+names(region_lookup)<-c("State", "Division")
+f_<-subset(flushot_s, State!="DC")
+f2<-left_join(f_, region_lookup, by=c("State"))
+f3<-subset(flushot_s, State=="DC")
+f3$Division="South Atlantic"
+f<-rbind(f3,f2)
+
+ggplot(a2%>%filter(Division=="Middle Atlantic"), aes(x=Year, y=Benes/estimate, color=State, group=State))+geom_point()+geom_smooth(method="lm",se=F)+facet_wrap(~Division)+labs(y="Proportion of Beneficiaries receiving Flu Shots")+ theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+panel.grid.minor = element_blank(), axis.text = element_text(size = 5), axis.title = element_text(size = 7), title = element_text(size = 7))
+
+ggplot(a2%>%filter(Division=="East North Central"), aes(x=Year, y=Benes/estimate, color=State, group=State))+geom_point()+geom_smooth(method="lm",se=F)+facet_wrap(~Division)+labs(y="Proportion of Beneficiaries receiving Flu Shots")
+
+ggplot(a2%>%filter(Division=="West North Central"), aes(x=Year, y=Benes/estimate, color=State, group=State))+geom_point()+geom_smooth(method="lm",se=F)+facet_wrap(~Division)+labs(y="Proportion of Beneficiaries receiving Flu Shots")
+
+ggplot(a2%>%filter(Division=="South Atlantic"), aes(x=Year, y=Benes/estimate, color=State, group=State))+geom_point()+geom_smooth(method="lm",se=F)+facet_wrap(~Division)+labs(y="Proportion of Beneficiaries receiving Flu Shots")
+
+
+ggplot(a2%>%filter(Division=="New England"), aes(x=Year, y=Benes/estimate, color=State, group=State))+geom_point()+geom_smooth(method="lm",se=F)+facet_wrap(~Division)+labs(y="Proportion of Beneficiaries receiving Flu Shots")
+
+ggplot(a2%>%filter(Division=="Mountain"), aes(x=Year, y=Benes/estimate, color=State, group=State))+geom_point()+geom_smooth(method="lm",se=F)+facet_wrap(~Division)+labs(y="Proportion of Beneficiaries receiving Flu Shots")
+
+ggplot(a2%>%filter(Division=="West South Central"), aes(x=Year, y=Benes/estimate, color=State, group=State))+geom_point()+geom_smooth(method="lm",se=F)+facet_wrap(~Division)+labs(y="Proportion of Beneficiaries receiving Flu Shots")
+
+ggplot(a2%>%filter(Division=="East South Central"), aes(x=Year, y=Benes/estimate, color=State, group=State))+geom_point()+geom_smooth(method="lm",se=F)+facet_wrap(~Division)+labs(y="Proportion of Beneficiaries receiving Flu Shots")
+
+ggplot(a2%>%filter(Division=="Pacific"), aes(x=Year, y=Benes/estimate, color=State, group=State))+geom_point()+geom_smooth(method="lm",se=F)+facet_wrap(~Division)+labs(y="Proportion of Beneficiaries receiving Flu Shots")
+
+ggplot(f%>%filter(Division=="Middle Atlantic"), aes(x=Year, y=Benes/estimate, color=State, group=State))+geom_point()+geom_smooth(method="lm",se=F)+facet_wrap(EntityFlag~Division)+labs(y="Proportion of Beneficiaries receiving Flu Shots")
+
+ggplot(f%>%filter(Division=="East North Central"), aes(x=Year, y=Benes/estimate, color=State, group=State))+geom_point()+geom_smooth(method="lm",se=F)+facet_wrap(EntityFlag~Division)+labs(y="Proportion of Beneficiaries receiving Flu Shots")
+
+ggplot(f%>%filter(Division=="West North Central"), aes(x=Year, y=Benes/estimate, color=State, group=State))+geom_point()+geom_smooth(method="lm",se=F)+facet_wrap(EntityFlag~Division)+labs(y="Proportion of Beneficiaries receiving Flu Shots")
+
+ggplot(f%>%filter(Division=="South Atlantic"), aes(x=Year, y=Benes/estimate, color=State, group=State))+geom_point()+geom_smooth(method="lm",se=F)+facet_wrap(EntityFlag~Division)+labs(y="Proportion of Beneficiaries receiving Flu Shots")
+
+ggplot(f%>%filter(Division=="New England"), aes(x=Year, y=Benes/estimate, color=State, group=State))+geom_point()+geom_smooth(method="lm",se=F)+facet_wrap(EntityFlag~Division)+labs(y="Proportion of Beneficiaries receiving Flu Shots")
+
+ggplot(f%>%filter(Division=="Mountain"), aes(x=Year, y=Benes/estimate, color=State, group=State))+geom_point()+geom_smooth(method="lm",se=F)+facet_wrap(EntityFlag~Division)+labs(y="Proportion of Beneficiaries receiving Flu Shots")
+
+ggplot(f%>%filter(Division=="West South Central"), aes(x=Year, y=Benes/estimate, color=State, group=State))+geom_point()+geom_smooth(method="lm",se=F)+facet_wrap(EntityFlag~Division)+labs(y="Proportion of Beneficiaries receiving Flu Shots")
+
+ggplot(f%>%filter(Division=="East South Central"), aes(x=Year, y=Benes/estimate, color=State, group=State))+geom_point()+geom_smooth(method="lm",se=F)+facet_wrap(EntityFlag~Division)+labs(y="Proportion of Beneficiaries receiving Flu Shots")
+
+ggplot(f%>%filter(Division=="Pacific"), aes(x=Year, y=Benes/estimate, color=State, group=State))+geom_point()+geom_smooth(method="lm",se=F)+facet_wrap(EntityFlag~Division)+labs(y="Proportion of Beneficiaries receiving Flu Shots")
+
+```
+
+```{r}
+rootogram(flushot_s[,4]/flushot_s[,5], predict(model)/estimate)
+```
+
+Rootogram plot showing model prediction issues
 
 \newpage
 ###Full Results
 
 ```{r echo=FALSE}
-ranef(fit)
+ranef(model)
 ```
 Fixed effects of model
 ```{r echo=FALSE}
-fixef(fit)
+fixef(model)
 ```
 Coefficients of model
 ```{r echo=FALSE}
-coef(fit)
+coef(model)
 ```
 
