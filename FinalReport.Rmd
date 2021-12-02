@@ -372,7 +372,7 @@ ggplot(f%>%filter(Division=="Pacific"), aes(x=Year, y=Benes/estimate, color=Stat
 ```
 
 ```{r}
-rootogram(flushot_s[,4]/flushot_s[,5], predict(model)/estimate)
+rootogram(flushot_s[,5]/flushot_s[,6], predict(model)/flushot_s[,6])
 ```
 
 Rootogram plot showing model prediction issues
